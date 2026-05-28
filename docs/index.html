@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Deep Spurious Regression (DSR): Spurious correlation correction for continuous regression targets.">
+  <meta name="keywords" content="DSR, Spurious Regression, Deep Learning, Computer Vision, NLP">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shortcut to Nowhere: Demystifying Deep Spurious Regression</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+/* ===== Variables ===== */
+:root {
+  --black: #07080d;
+  --navy: #0d1117;
+  --navy-light: #141925;
+  --blue: #3b82f6;
+  --blue-dark: #1d4ed8;
+  --blue-glow: rgba(59, 130, 246, 0.25);
+  --orange: #f97316;
+  --orange-dark: #c2410c;
+  --orange-glow: rgba(249, 115, 22, 0.2);
+  --text-primary: #edf0f7;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --card-bg: rgba(13, 17, 23, 0.72);
+  --card-border: rgba(59, 130, 246, 0.15);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { font-size: 18px; scroll-behavior: smooth; }
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--black);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; height: auto; display: block; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--black); }
+::-webkit-scrollbar-thumb { background: var(--blue-dark); border-radius: 3px; }
+::selection { background: var(--blue); color: #fff; }
+
+/* ===== Navigation ===== */
+.site-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(5, 10, 18, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.nav-inner {
+  width: 75vw; max-width: 100%; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2rem; height: 56px;
+}
+
+.nav-brand { font-weight: 700; font-size: 1.2rem; cursor: pointer; }
+.nav-brand span {
+  background: linear-gradient(135deg, var(--blue), var(--orange));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+.nav-links { display: flex; gap: 0.2rem; list-style: none; }
+
+.nav-links a {
+  display: block; color: var(--text-secondary);
+  font-size: 1rem; font-weight: 500;
+  padding: 0.4rem 0.85rem; border-radius: 6px;
+  transition: color 0.2s, background 0.2s; cursor: pointer;
+}
+
+.nav-links a:hover { color: var(--text-primary); background: rgba(59, 130, 246, 0.1); }
+.nav-links a.active { color: #fff; background: rgba(59, 130, 246, 0.22); }
+
+/* Dropdown */
+.nav-dropdown { position: relative; }
+.dropdown-trigger { display: flex !important; align-items: center; gap: 0.3rem; }
+.dropdown-trigger i { font-size: 0.7rem; transition: transform 0.2s; }
+.nav-dropdown.open .dropdown-trigger i { transform: rotate(180deg); }
+
+.dropdown-menu {
+  display: none !important; position: absolute; top: 100%; right: 0;
+  min-width: 280px; background: rgba(10, 22, 40, 0.97);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px;
+  padding: 0.4rem 0; margin-top: 0.35rem; list-style: none;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5); z-index: 100;
+}
+.nav-dropdown.open .dropdown-menu { display: block !important; }
+.dropdown-menu li a {
+  display: block; padding: 0.55rem 1rem; font-size: 0.85rem;
+  color: var(--text-secondary); white-space: normal; line-height: 1.4;
+  transition: color 0.15s, background 0.15s;
+}
+.dropdown-menu li a:hover { color: var(--text-primary); background: rgba(59, 130, 246, 0.12); }
+
+.nav-toggle { display: none; background: none; border: none; color: var(--text-primary); font-size: 1.3rem; cursor: pointer; }
+
+@media (max-width: 768px) {
+  .nav-toggle { display: block; }
+  .nav-links {
+    display: none; position: absolute; top: 56px; left: 0; right: 0;
+    flex-direction: column; background: rgba(5, 10, 18, 0.96);
+    backdrop-filter: blur(20px); padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+  }
+  .nav-links.open { display: flex; }
+  .dropdown-menu {
+    position: static !important; background: rgba(10, 22, 40, 0.6) !important;
+    border: none !important; box-shadow: none !important; margin-top: 0;
+    padding-left: 0.75rem; border-left: 2px solid rgba(59, 130, 246, 0.2) !important;
+    border-radius: 0 !important; min-width: 0;
+  }
+}
+
+/* ===== Tab Panels ===== */
+.tab-panel { display: none; padding-top: 56px; min-height: calc(100vh - 80px); animation: fadeIn 0.35s ease; }
+.tab-panel.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Sections ===== */
+.hero-section {
+  padding: 80px 2.5rem 40px;
+  background: linear-gradient(160deg, #050a12 0%, #0a1628 40%, #111d35 100%);
+  position: relative; overflow: hidden;
+}
+
+.hero-section::before {
+  content: ''; position: absolute; top: -180px; right: -180px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, var(--blue-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-section::after {
+  content: ''; position: absolute; bottom: -120px; left: -120px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, var(--orange-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.content-section { padding: 60px 2.5rem; background: var(--navy); }
+.content-section:nth-child(even) { background: linear-gradient(160deg, var(--navy) 0%, #0d1f30 100%); }
+.content-section.first-section {
+  padding-top: 80px;
+  background: linear-gradient(160deg, #050a12 0%, var(--navy) 50%, #0d1f30 100%);
+  position: relative; overflow: hidden;
+}
+.content-section.first-section::before {
+  content: ''; position: absolute; top: -100px; right: -150px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, var(--blue-glow) 0%, transparent 70%);
+  pointer-events: none; opacity: 0.5;
+}
+
+.section-inner { width: 50vw; max-width: 100%; margin: 0 auto; position: relative; z-index: 1; }
+
+.section-divider {
+  height: 1px; width: 50vw; margin: 0 auto;
+  background: linear-gradient(90deg, transparent, var(--blue-dark), var(--orange-dark), transparent);
+  opacity: 0.35;
+}
+
+/* ===== Hero ===== */
+.hero-title { text-align: center; position: relative; z-index: 1; }
+
+.hero-title h1 {
+  font-size: clamp(1.3rem, 2.4vw, 2.0rem);
+  font-weight: 700; line-height: 1.25; margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #edf0f7 0%, #93c5fd 50%, #fdba74 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+.hero-subtitle {
+  color: var(--text-secondary); font-size: 1rem;
+  max-width: 600px; margin: 0 auto 1.5rem;
+  line-height: 1.7;
+}
+
+
+/* ===== Authors ===== */
+.authors { text-align: center; margin-bottom: 0.4rem; line-height: 1.8; }
+.author-block { display: inline-block; font-size: 1rem; }
+.authors a { color: #60a5fa; transition: color 0.2s; }
+.authors a:hover { color: #93c5fd; text-decoration: underline; }
+.affiliation { text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.75rem; }
+
+/* ===== Link Buttons ===== */
+.link-buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.65rem; }
+.link-buttons a {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  padding: 0.55rem 1.1rem; border-radius: 999px;
+  font-size: 0.875rem; font-weight: 500;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: var(--text-primary); background: rgba(59, 130, 246, 0.1);
+  transition: all 0.2s;
+}
+.link-buttons a:hover { background: rgba(59, 130, 246, 0.25); border-color: var(--blue); transform: translateY(-1px); }
+.link-buttons a.btn-disabled { opacity: 0.45; pointer-events: none; }
+.link-buttons .icon { font-size: 1.05rem; display: inline-flex; }
+
+/* ===== Teaser ===== */
+.teaser-block { text-align: center; }
+.teaser-block img {
+  width: 100%; border-radius: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  box-shadow: 0 6px 32px rgba(0,0,0,0.4), 0 0 50px rgba(59, 130, 246, 0.12);
+  margin: 0 auto;
+}
+.teaser-caption {
+  color: var(--text-secondary); font-size: 1rem; line-height: 1.65;
+  margin-top: 1.25rem; font-style: italic;
+  max-width: 900px; margin-left: auto; margin-right: auto;
+}
+
+/* ===== Section Headers ===== */
+.section-header { margin-bottom: 1.5rem; }
+.section-header h2 { font-size: 1.65rem; font-weight: 700; color: var(--text-primary); display: inline-block; }
+.section-header h2::after {
+  content: ''; display: block; width: 50px; height: 3px;
+  margin-top: 0.4rem; border-radius: 2px; background: var(--blue);
+}
+.section-header.centered { text-align: center; }
+.section-header.centered h2::after { margin-left: auto; margin-right: auto; }
+
+/* ===== Content Card ===== */
+.content-card {
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: 10px; padding: 1.75rem; margin-bottom: 1.5rem;
+  backdrop-filter: blur(6px);
+}
+.content-card p { color: var(--text-secondary); line-height: 1.8; font-size: 1.05rem; margin-bottom: 0.85rem; }
+.content-card p:last-child { margin-bottom: 0; }
+.content-card strong { color: var(--text-primary); }
+.content-card code { background: rgba(59,130,246,0.12); color: #93c5fd; padding: 0.12em 0.35em; border-radius: 4px; font-size: 0.88em; }
+
+/* ===== News ===== */
+.news-list {
+  display: flex; flex-direction: column;
+  background: rgba(29,78,216,0.08); border: 1px solid rgba(59,130,246,0.2);
+  border-left: 3px solid #60a5fa; border-radius: 10px;
+  padding: 0.75rem 1.5rem; backdrop-filter: blur(6px);
+}
+.news-item { display: flex; align-items: baseline; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid rgba(124,58,237,0.08); }
+.news-item:last-child { border-bottom: none; }
+.news-date { color: #60a5fa; font-size: 0.85rem; font-weight: 600; white-space: nowrap; min-width: 100px; }
+.news-text { color: var(--text-secondary); font-size: 1rem; line-height: 1.6; }
+.news-text a { color: #60a5fa; text-decoration: underline; text-underline-offset: 2px; }
+.news-text a:hover { color: #93c5fd; }
+
+/* ===== Method Components ===== */
+.method-components { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+
+.method-item {
+  background: rgba(249,115,22,0.05); border: 1px solid rgba(249,115,22,0.18);
+  border-left: 3px solid var(--orange); border-radius: 8px; padding: 1.15rem 1.35rem;
+}
+.method-item h4 { color: #fdba74; font-size: 0.95rem; font-weight: 600; margin-bottom: 0.4rem; }
+.method-item p { color: var(--text-secondary); font-size: 1rem; line-height: 1.7; }
+
+/* ===== Benchmark Pills ===== */
+.pill-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0 1.25rem; }
+.pill {
+  background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.28);
+  color: #93c5fd; border-radius: 6px; padding: 3px 12px; font-size: 0.82rem; font-weight: 500;
+}
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 12px 0 1.5rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+thead tr th {
+  background: rgba(59,130,246,0.2); color: #93c5fd;
+  padding: 10px 16px; text-align: left; font-weight: 600;
+  border-bottom: 2px solid rgba(124,58,237,0.3);
+}
+td { padding: 9px 16px; border-bottom: 1px solid rgba(124,58,237,0.08); color: var(--text-secondary); }
+tr:last-child td { border-bottom: none; }
+tr:nth-child(even) td { background: rgba(17,29,53,0.4); }
+.best { font-weight: 400; color: var(--text-primary); }
+
+h3.table-label {
+  font-size: 1rem; font-weight: 600; color: #60a5fa;
+  margin: 1.5rem 0 0.5rem;
+}
+
+/* ===== Code block ===== */
+pre {
+  background: rgba(17,29,53,0.85); border: 1px solid var(--card-border);
+  border-radius: 10px; padding: 1.25rem; overflow-x: auto;
+  font-size: 0.85rem; line-height: 1.6; margin: 0.75rem 0 1.25rem;
+  color: #e2e8f0;
+}
+pre code { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; background: none; color: inherit; }
+
+/* ===== Figure ===== */
+.figure-block { margin: 1.5rem 0; text-align: center; }
+.figure-block img { width: 100%; border-radius: 8px; border: 1px solid rgba(124,58,237,0.12); box-shadow: 0 4px 20px rgba(0,0,0,0.3); margin: 0 auto; display: block; }
+.figure-block figcaption { color: var(--text-muted); font-size: 0.88rem; margin-top: 0.65rem; font-style: italic; }
+
+/* ===== BibTeX ===== */
+.bibtex-block {
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: 10px; padding: 1.5rem; overflow-x: auto;
+  font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary);
+}
+.bibtex-block code { background: none; color: inherit; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; }
+
+/* ===== Footer ===== */
+.site-footer {
+  padding: 1.5rem; background: var(--black);
+  border-top: 1px solid rgba(124,58,237,0.08); text-align: center;
+}
+.footer-icons { font-size: 1.2rem; margin-bottom: 0.5rem; }
+.footer-icons a { color: var(--text-muted); margin: 0 0.4rem; transition: color 0.2s; }
+.footer-icons a:hover { color: #60a5fa; }
+.site-footer p { color: var(--text-muted); font-size: 0.78rem; }
+.site-footer p a { color: var(--text-muted); text-decoration: underline; text-underline-offset: 2px; }
+.site-footer p a:hover { color: var(--text-secondary); }
+
+@media (max-width: 900px) {
+  .section-inner { width: 90vw; }
+}
+
+/* ===== Results table extras ===== */
+#tab-results .section-inner { width: 80vw; }
+
+th.col-group {
+  background: rgba(59,130,246,0.12); color: #93c5fd;
+  text-align: center; font-size: 0.78rem; letter-spacing: 0.03em;
+  padding: 6px 10px; border-bottom: 1px solid rgba(59,130,246,0.2);
+}
+th.col-sub {
+  background: rgba(59,130,246,0.08); color: var(--text-secondary);
+  text-align: center; font-size: 0.75rem; font-weight: 500;
+  padding: 5px 8px; border-bottom: 2px solid rgba(59,130,246,0.25);
+}
+th.col-main {
+  background: rgba(59,130,246,0.2); color: #93c5fd;
+  text-align: left; font-weight: 600; font-size: 0.82rem;
+  padding: 10px 12px;
+}
+td { text-align: center; font-size: 0.82rem; }
+td:first-child { text-align: left; font-weight: 500; color: var(--text-primary); }
+td small { color: var(--text-muted); font-size: 0.72rem; }
+
+#tab-results tr:not(.ours-row):not(.improve-row) td { background: rgba(13,17,23,0.35); }
+#tab-results tr:nth-child(even):not(.ours-row):not(.improve-row) td { background: rgba(13,17,23,0.35); }
+.ours-row td { background: rgba(59,130,246,0.1); }
+.improve-row td { background: rgba(13,17,23,0.5); font-weight: 600; font-size: 0.8rem; }
+.improve-row td:first-child { color: var(--text-secondary); font-weight: 500; font-size: 0.8rem; }
+.improve-pos { color: #4ade80; }
+.improve-neg { color: #7dd3fc; }
+.second-best { text-decoration: underline; text-underline-offset: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ===== Navigation ===== -->
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-brand" data-tab="home"><span>Deep Spurious Regression</span></a>
+    <button class="nav-toggle" aria-label="Menu">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="#" class="active" data-tab="home">Home</a></li>
+      <li><a href="#" data-tab="method">Method</a></li>
+      <li><a href="#" data-tab="results">Results</a></li>
+      <li><a href="#" data-tab="citation">Paper</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ===== Tab: Home ===== -->
+<div id="tab-home" class="tab-panel active">
+
+  <section class="hero-section">
+    <div class="section-inner">
+      <div class="hero-title">
+
+        <h1>Shortcut to Nowhere: Demystifying<br>Deep Spurious Regression</h1>
+
+
+        <div class="authors">
+          <span class="author-block">Guanrong Xu<sup>1</sup>,&nbsp;</span>
+          <span class="author-block">Jessica Li<sup>1</sup>,&nbsp;</span>
+          <span class="author-block">Hao Wang<sup>2</sup>,&nbsp;</span>
+          <span class="author-block">Yuzhe Yang<sup>1</sup></span>
+        </div>
+        <div class="affiliation">
+          <sup>1</sup>University of California, Los Angeles &nbsp;|&nbsp;
+          <sup>2</sup>Rutgers University
+        </div>
+
+        <!-- BADGES — replace # with real URLs -->
+        <div class="link-buttons">
+          <a href="#">
+            <span class="icon"><i class="ai ai-arxiv"></i></span>
+            arXiv
+          </a>
+          <a href="https://github.com/yang-ai-lab/Deep-Spurious-Regression">
+            <span class="icon"><i class="fab fa-github"></i></span>
+            GitHub
+          </a>
+          <a href="https://huggingface.co/yang-ai-lab/Deep-Spurious-Regression">
+            <span class="icon">&#129303;</span>
+            HuggingFace
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="content-section">
+    <div class="section-inner">
+
+      <!-- Teaser GIF -->
+      <div class="teaser-block" style="margin-bottom: 2.5rem;">
+        <img src="DSR_transferability.gif" alt="DSR transferability visualization" />
+        <p class="teaser-caption">
+          From aligned to misaligned spurious attributes: varying target distribution similarity across attributes reveals how learned feature-space embeddings reflect distributional relationships, motivating MDS-based information sharing across related attributes.
+        </p>
+      </div>
+
+      <!-- News -->
+      <div class="section-header">
+        <h2>&#128240; News</h2>
+      </div>
+      <div class="news-list" style="margin-bottom: 2.5rem;">
+        <div class="news-item">
+          <span class="news-date">2026-05-28</span>
+          <span class="news-text">Paper released on arXiv!</span>
+        </div>
+        <div class="news-item">
+          <span class="news-date">2026-05-27</span>
+          <span class="news-text">Project website is live!</span>
+        </div>
+        <div class="news-item">
+          <span class="news-date">2026-05-26</span>
+          <span class="news-text">Code released on <a href="https://github.com/yang-ai-lab/Deep-Spurious-Regression">GitHub</a>.</span>
+        </div>
+      </div>
+
+      <!-- Abstract -->
+      <div class="section-header">
+        <h2>Abstract</h2>
+      </div>
+      <div class="content-card">
+        <p>
+          Real-world regression often exhibits shortcuts: attributes that are spuriously correlated
+          with continuous targets in training, yet unreliable under deployment shifts — regressing targets
+          using such shortcuts may fail catastrophically at test time.
+        </p>
+        <p>
+          Existing studies on spurious correlations focus primarily on <strong>classification</strong>, where labels
+          are categorical and groups are naturally defined. However, many real-world tasks require
+          <strong>continuous prediction</strong>, where hard label boundaries or discrete group–label pairs do not exist.
+          We define <strong>Deep Spurious Regression (DSR)</strong> as learning from regression data with
+          attribute–label confounding, addressing continuous spurious correlations, and generalizing to all
+          attribute–label combinations at test time.
+        </p>
+        <p>
+          Motivated by the intrinsic difference between classification and regression shortcuts, we propose
+          to exploit the similarity among spurious attributes in both label and feature spaces, thereby
+          accounting for nearby targets and related groups while calibrating both label and learned feature
+          distributions across attributes. Extensive experiments on real-world DSR datasets spanning
+          computer vision, environmental sensing, and LLM regression verify the superior performance of
+          our strategies. Our work fills the gap in benchmarks and techniques for studying spurious
+          correlations in continuous prediction.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<!-- ===== Tab: Method ===== -->
+<div id="tab-method" class="tab-panel">
+
+  <section class="content-section first-section">
+    <div class="section-inner">
+
+      <div class="section-header">
+        <h2>Our Methods</h2>
+      </div>
+
+      <div class="method-components">
+        <div class="method-item">
+          <h4>Label MDS (LMDS)</h4>
+          <p>
+            Builds a cross-group kernel from pairwise Wasserstein distances between attribute–target distributions
+            via Multidimensional Scaling (MDS). Uses cross-group similarity to reweight samples, correcting for
+            spurious attribute–target confounding in the label space. Applied <em>once</em> at dataset construction — no training overhead.
+          </p>
+        </div>
+        <div class="method-item">
+          <h4>Feature MDS (FMDS)</h4>
+          <p>
+            Extracts model representations during training, computes per-attribute centroids,
+            and builds a cross-group kernel via MDS to dynamically update sample weights.
+            Unlike LMDS, FMDS operates in feature space and continuously adapts as the model's
+            representations evolve throughout training.
+          </p>
+        </div>
+        <div class="method-item">
+          <h4>LMDS + FMDS</h4>
+          <p>
+            The two techniques can be combined for full static + dynamic cross-group correction,
+            leveraging both label-space and feature-space signals simultaneously.
+          </p>
+        </div>
+      </div>
+
+      <div class="section-header" style="margin-top: 2rem;">
+        <h2>Benchmarks</h2>
+      </div>
+      <div class="content-card">
+        <p>We curate four real-world DSR datasets spanning computer vision, environmental sensing, and large language models (LLM), and compare against a comprehensive set of baselines:</p>
+        <div class="pill-row">
+          <span class="pill">ERM</span>
+          <span class="pill">Resample</span>
+          <span class="pill">SqrtReWeight</span>
+          <span class="pill">ReWeight</span>
+          <span class="pill">CBLoss</span>
+          <span class="pill">DANN</span>
+          <span class="pill">Rank-N-Contrast (RnC)</span>
+          <span class="pill">Label Distribution Smoothing (LDS)</span>
+          <span class="pill">GroupDRO</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Dataset</th><th>Task</th><th>Spurious Attribute</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>UTKFace</td><td>Age regression</td><td>Race</td></tr>
+            <tr><td>SkyFinder</td><td>Temperature regression</td><td>Camera Location</td></tr>
+            <tr><td>PovertyMap</td><td>Poverty index regression</td><td>Country</td></tr>
+            <tr><td>CodeNet</td><td>CPU runtime regression</td><td>Coding Language</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<!-- ===== Tab: Results ===== -->
+<div id="tab-results" class="tab-panel">
+
+  <section class="content-section first-section">
+    <div class="section-inner">
+
+      <div class="section-header">
+        <h2>Results</h2>
+      </div>
+      <h3 class="table-label">UTKFace &mdash; Age Regression</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-main" rowspan="3">Algorithm</th>
+              <th class="col-main" rowspan="3">Overall</th>
+              <th class="col-group" colspan="2">Test Error (by attribute)</th>
+              <th class="col-group" colspan="8">Test Error (by shot)</th>
+            </tr>
+            <tr>
+              <th class="col-sub" rowspan="2">Average</th>
+              <th class="col-sub" rowspan="2">Worst</th>
+              <th class="col-group" colspan="2">Many</th>
+              <th class="col-group" colspan="2">Medium</th>
+              <th class="col-group" colspan="2">Few</th>
+              <th class="col-group" colspan="2">Zero</th>
+            </tr>
+            <tr>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ERM</td>
+              <td>7.39 <small>±0.1</small></td>
+              <td>7.26 <small>±0.1</small></td><td>9.19 <small>±0.2</small></td>
+              <td><strong class="best">4.34</strong> <small>±0.2</small></td><td>18.61 <small>±2.3</small></td>
+              <td>6.24 <small>±0.1</small></td><td>19.18 <small>±0.7</small></td>
+              <td>7.19 <small>±0.1</small></td><td>13.16 <small>±1.9</small></td>
+              <td>9.83 <small>±0.2</small></td><td>73.56 <small>±7.3</small></td>
+            </tr>
+            <tr>
+              <td>Resample</td>
+              <td>7.64 <small>±0.1</small></td>
+              <td>7.50 <small>±0.1</small></td><td>9.40 <small>±0.3</small></td>
+              <td>4.72 <small>±0.1</small></td><td>19.71 <small>±1.2</small></td>
+              <td>6.20 <small>±0.1</small></td><td>17.12 <small>±0.9</small></td>
+              <td>7.00 <small>±0.3</small></td><td>13.03 <small>±1.4</small></td>
+              <td>10.43 <small>±0.4</small></td><td>76.58 <small>±7.1</small></td>
+            </tr>
+            <tr>
+              <td>SqrtReWeight</td>
+              <td>7.31 <small>±0.1</small></td>
+              <td>7.18 <small>±0.1</small></td><td>9.02 <small>±0.3</small></td>
+              <td>4.48 <small>±0.2</small></td><td><strong class="best">16.30</strong> <small>±2.3</small></td>
+              <td>6.10 <small>±0.1</small></td><td><strong class="best">16.01</strong> <small>±0.8</small></td>
+              <td>6.90 <small>±0.1</small></td><td>13.18 <small>±1.1</small></td>
+              <td>9.78 <small>±0.4</small></td><td><strong class="best">62.10</strong> <small>±8.2</small></td>
+            </tr>
+            <tr>
+              <td>ReWeight</td>
+              <td>8.42 <small>±0.1</small></td>
+              <td>8.25 <small>±0.1</small></td><td>9.62 <small>±0.2</small></td>
+              <td>6.21 <small>±0.1</small></td><td>17.82 <small>±0.9</small></td>
+              <td>7.06 <small>±0.1</small></td><td>18.00 <small>±1.4</small></td>
+              <td>7.65 <small>±0.1</small></td><td>14.78 <small>±1.4</small></td>
+              <td>10.88 <small>±0.3</small></td><td>86.59 <small>±4.6</small></td>
+            </tr>
+            <tr>
+              <td>CBLoss</td>
+              <td>8.37 <small>±0.1</small></td>
+              <td>8.19 <small>±0.1</small></td><td>9.61 <small>±0.1</small></td>
+              <td>6.16 <small>±0.1</small></td><td>18.55 <small>±1.8</small></td>
+              <td>6.98 <small>±0.1</small></td><td>18.18 <small>±1.6</small></td>
+              <td>7.56 <small>±0.2</small></td><td>15.23 <small>±1.3</small></td>
+              <td>10.86 <small>±0.2</small></td><td>87.54 <small>±2.1</small></td>
+            </tr>
+            <tr>
+              <td>DANN</td>
+              <td>7.97 <small>±0.1</small></td>
+              <td>7.82 <small>±0.1</small></td><td>9.69 <small>±0.2</small></td>
+              <td>4.63 <small>±0.2</small></td><td>20.62 <small>±1.4</small></td>
+              <td>6.65 <small>±0.1</small></td><td>20.32 <small>±0.5</small></td>
+              <td>7.88 <small>±0.1</small></td><td>15.90 <small>±1.1</small></td>
+              <td>10.67 <small>±0.3</small></td><td>76.86 <small>±4.7</small></td>
+            </tr>
+            <tr>
+              <td>RnC</td>
+              <td>7.38 <small>±0.1</small></td>
+              <td>7.25 <small>±0.1</small></td><td>9.22 <small>±0.2</small></td>
+              <td><span class="second-best">4.35</span> <small>±0.1</small></td><td>19.31 <small>±1.1</small></td>
+              <td>6.15 <small>±0.0</small></td><td>17.64 <small>±1.3</small></td>
+              <td>7.12 <small>±0.1</small></td><td>12.55 <small>±0.9</small></td>
+              <td>9.91 <small>±0.2</small></td><td><span class="second-best">63.69</span> <small>±6.2</small></td>
+            </tr>
+            <tr>
+              <td>LDS</td>
+              <td><span class="second-best">7.23</span> <small>±0.1</small></td>
+              <td><span class="second-best">7.09</span> <small>±0.1</small></td><td><span class="second-best">8.90</span> <small>±0.1</small></td>
+              <td>4.58 <small>±0.1</small></td><td><span class="second-best">16.59</span> <small>±1.9</small></td>
+              <td>6.12 <small>±0.0</small></td><td><span class="second-best">16.36</span> <small>±0.6</small></td>
+              <td>7.01 <small>±0.2</small></td><td>13.22 <small>±0.6</small></td>
+              <td><strong class="best">9.46</strong> <small>±0.3</small></td><td>71.49 <small>±10.6</small></td>
+            </tr>
+            <tr>
+              <td>GroupDRO</td>
+              <td>7.43 <small>±0.1</small></td>
+              <td>7.29 <small>±0.1</small></td><td>9.02 <small>±0.1</small></td>
+              <td>4.94 <small>±0.1</small></td><td>16.69 <small>±1.7</small></td>
+              <td>6.13 <small>±0.1</small></td><td>17.78 <small>±1.5</small></td>
+              <td>6.86 <small>±0.2</small></td><td>12.71 <small>±0.9</small></td>
+              <td>9.90 <small>±0.1</small></td><td>71.79 <small>±11.7</small></td>
+            </tr>
+            <tr class="ours-row">
+              <td>L-MDS</td>
+              <td>7.30 <small>±0.1</small></td>
+              <td>7.17 <small>±0.1</small></td><td>8.94 <small>±0.2</small></td>
+              <td>4.66 <small>±0.2</small></td><td>19.40 <small>±2.1</small></td>
+              <td><strong class="best">6.03</strong> <small>±0.1</small></td><td>17.62 <small>±1.0</small></td>
+              <td><span class="second-best">6.79</span> <small>±0.2</small></td><td><span class="second-best">12.51</span> <small>±1.2</small></td>
+              <td>9.79 <small>±0.2</small></td><td>76.32 <small>±6.2</small></td>
+            </tr>
+            <tr class="ours-row">
+              <td>F-MDS</td>
+              <td><strong class="best">7.22</strong> <small>±0.1</small></td>
+              <td><strong class="best">7.08</strong> <small>±0.1</small></td><td><strong class="best">8.71</strong> <small>±0.2</small></td>
+              <td>4.65 <small>±0.2</small></td><td>17.49 <small>±1.9</small></td>
+              <td><span class="second-best">6.08</span> <small>±0.1</small></td><td>17.91 <small>±0.2</small></td>
+              <td><strong class="best">6.71</strong> <small>±0.2</small></td><td><strong class="best">12.43</strong> <small>±1.4</small></td>
+              <td><span class="second-best">9.54</span> <small>±0.4</small></td><td>68.81 <small>±8.1</small></td>
+            </tr>
+            <tr class="ours-row">
+              <td>L-MDS + F-MDS</td>
+              <td>7.42 <small>±0.1</small></td>
+              <td>7.29 <small>±0.1</small></td><td>9.04 <small>±0.2</small></td>
+              <td>4.55 <small>±0.2</small></td><td>17.55 <small>±1.8</small></td>
+              <td>6.15 <small>±0.1</small></td><td>17.73 <small>±1.8</small></td>
+              <td>7.02 <small>±0.1</small></td><td>12.88 <small>±0.6</small></td>
+              <td>9.96 <small>±0.3</small></td><td>77.43 <small>±9.3</small></td>
+            </tr>
+            <tr class="improve-row">
+              <td>Ours (best) vs. ERM</td>
+              <td><span class="improve-pos">+0.17</span></td>
+              <td><span class="improve-pos">+0.18</span></td><td><span class="improve-pos">+0.48</span></td>
+              <td><span class="improve-neg">-0.21</span></td><td><span class="improve-pos">+1.12</span></td>
+              <td><span class="improve-pos">+0.21</span></td><td><span class="improve-pos">+1.56</span></td>
+              <td><span class="improve-pos">+0.48</span></td><td><span class="improve-pos">+0.73</span></td>
+              <td><span class="improve-pos">+0.29</span></td><td><span class="improve-pos">+4.75</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="table-label" style="margin-top:2rem;">SkyFinder &mdash; Temperature Regression</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-main" rowspan="3">Algorithm</th>
+              <th class="col-main" rowspan="3">Overall</th>
+              <th class="col-group" colspan="2">Test Error (by attribute)</th>
+              <th class="col-group" colspan="8">Test Error (by shot)</th>
+            </tr>
+            <tr>
+              <th class="col-sub" rowspan="2">Average</th>
+              <th class="col-sub" rowspan="2">Worst</th>
+              <th class="col-group" colspan="2">Many</th>
+              <th class="col-group" colspan="2">Medium</th>
+              <th class="col-group" colspan="2">Few</th>
+              <th class="col-group" colspan="2">Zero</th>
+            </tr>
+            <tr>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ERM</td>
+              <td>3.68 <small>±0.0</small></td>
+              <td>3.41 <small>±0.0</small></td><td>5.95 <small>±0.1</small></td>
+              <td><strong class="best">2.27</strong> <small>±0.0</small></td><td>6.45 <small>±0.6</small></td>
+              <td><span class="second-best">2.94</span> <small>±0.0</small></td><td>12.21 <small>±1.2</small></td>
+              <td>4.49 <small>±0.0</small></td><td>25.08 <small>±0.9</small></td>
+              <td>5.22 <small>±0.0</small></td><td><span class="second-best">29.78</span> <small>±1.8</small></td>
+            </tr>
+            <tr>
+              <td>Resample</td>
+              <td>3.62 <small>±0.0</small></td>
+              <td>3.35 <small>±0.0</small></td><td><span class="second-best">5.76</span> <small>±0.1</small></td>
+              <td>2.71 <small>±0.1</small></td><td>7.28 <small>±0.3</small></td>
+              <td>3.00 <small>±0.0</small></td><td>13.37 <small>±1.2</small></td>
+              <td>4.23 <small>±0.0</small></td><td><strong class="best">19.23</strong> <small>±0.6</small></td>
+              <td>4.97 <small>±0.1</small></td><td>36.23 <small>±4.0</small></td>
+            </tr>
+            <tr>
+              <td>SqrtReWeight</td>
+              <td><span class="second-best">3.53</span> <small>±0.0</small></td>
+              <td><span class="second-best">3.26</span> <small>±0.0</small></td><td>5.85 <small>±0.1</small></td>
+              <td>2.34 <small>±0.1</small></td><td>6.91 <small>±0.8</small></td>
+              <td>2.95 <small>±0.0</small></td><td><span class="second-best">11.69</span> <small>±0.8</small></td>
+              <td><span class="second-best">4.17</span> <small>±0.0</small></td><td>23.76 <small>±1.0</small></td>
+              <td>4.75 <small>±0.1</small></td><td>32.65 <small>±1.7</small></td>
+            </tr>
+            <tr>
+              <td>ReWeight</td>
+              <td>4.25 <small>±0.0</small></td>
+              <td>3.91 <small>±0.0</small></td><td>7.13 <small>±0.2</small></td>
+              <td>4.03 <small>±0.1</small></td><td>10.55 <small>±0.8</small></td>
+              <td>3.88 <small>±0.0</small></td><td>15.84 <small>±1.3</small></td>
+              <td>4.52 <small>±0.0</small></td><td>21.90 <small>±0.4</small></td>
+              <td>5.13 <small>±0.1</small></td><td>33.09 <small>±1.6</small></td>
+            </tr>
+            <tr>
+              <td>CBLoss</td>
+              <td>4.23 <small>±0.1</small></td>
+              <td>3.90 <small>±0.1</small></td><td>7.24 <small>±0.2</small></td>
+              <td>4.07 <small>±0.2</small></td><td>10.39 <small>±0.8</small></td>
+              <td>3.86 <small>±0.1</small></td><td>15.04 <small>±2.1</small></td>
+              <td>4.50 <small>±0.1</small></td><td>20.16 <small>±0.6</small></td>
+              <td>5.12 <small>±0.1</small></td><td>30.88 <small>±1.0</small></td>
+            </tr>
+            <tr>
+              <td>DANN</td>
+              <td>4.04 <small>±0.1</small></td>
+              <td>3.76 <small>±0.1</small></td><td>6.75 <small>±0.2</small></td>
+              <td>2.57 <small>±0.0</small></td><td>7.98 <small>±0.7</small></td>
+              <td>3.32 <small>±0.1</small></td><td>12.60 <small>±1.3</small></td>
+              <td>4.83 <small>±0.1</small></td><td>24.84 <small>±0.4</small></td>
+              <td>5.56 <small>±0.1</small></td><td>31.02 <small>±1.6</small></td>
+            </tr>
+            <tr>
+              <td>RnC</td>
+              <td><strong class="best">3.49</strong> <small>±0.0</small></td>
+              <td><strong class="best">3.24</strong> <small>±0.0</small></td><td><strong class="best">5.69</strong> <small>±0.1</small></td>
+              <td>2.42 <small>±0.0</small></td><td>7.21 <small>±0.5</small></td>
+              <td><strong class="best">2.90</strong> <small>±0.1</small></td><td>11.99 <small>±0.8</small></td>
+              <td><strong class="best">4.14</strong> <small>±0.0</small></td><td><span class="second-best">19.65</span> <small>±1.2</small></td>
+              <td><strong class="best">4.71</strong> <small>±0.1</small></td><td>30.86 <small>±2.2</small></td>
+            </tr>
+            <tr>
+              <td>LDS</td>
+              <td>3.85 <small>±0.1</small></td>
+              <td>3.56 <small>±0.0</small></td><td>6.44 <small>±0.4</small></td>
+              <td>2.39 <small>±0.0</small></td><td>7.95 <small>±0.6</small></td>
+              <td>3.12 <small>±0.0</small></td><td>13.51 <small>±1.0</small></td>
+              <td>4.69 <small>±0.1</small></td><td>21.71 <small>±0.9</small></td>
+              <td>5.26 <small>±0.1</small></td><td>33.98 <small>±2.8</small></td>
+            </tr>
+            <tr>
+              <td>GroupDRO</td>
+              <td>3.62 <small>±0.0</small></td>
+              <td>3.35 <small>±0.0</small></td><td>6.00 <small>±0.1</small></td>
+              <td>2.34 <small>±0.0</small></td><td>6.64 <small>±0.5</small></td>
+              <td><strong class="best">2.90</strong> <small>±0.0</small></td><td>12.43 <small>±1.1</small></td>
+              <td>4.42 <small>±0.1</small></td><td>25.07 <small>±1.4</small></td>
+              <td>5.04 <small>±0.0</small></td><td><strong class="best">29.66</strong> <small>±1.5</small></td>
+            </tr>
+            <tr class="ours-row">
+              <td>L-MDS</td>
+              <td>3.54 <small>±0.0</small></td>
+              <td>3.27 <small>±0.0</small></td><td>5.81 <small>±0.2</small></td>
+              <td>2.38 <small>±0.0</small></td><td>6.86 <small>±0.6</small></td>
+              <td>2.95 <small>±0.0</small></td><td><strong class="best">11.63</strong> <small>±1.0</small></td>
+              <td><span class="second-best">4.17</span> <small>±0.0</small></td><td>23.63 <small>±0.7</small></td>
+              <td>4.78 <small>±0.0</small></td><td>31.47 <small>±2.3</small></td>
+            </tr>
+            <tr class="ours-row">
+              <td>F-MDS</td>
+              <td>3.56 <small>±0.0</small></td>
+              <td>3.29 <small>±0.0</small></td><td>5.81 <small>±0.2</small></td>
+              <td><span class="second-best">2.33</span> <small>±0.1</small></td><td><span class="second-best">6.44</span> <small>±0.3</small></td>
+              <td>2.97 <small>±0.0</small></td><td>11.86 <small>±0.4</small></td>
+              <td>4.22 <small>±0.0</small></td><td>21.40 <small>±1.1</small></td>
+              <td><span class="second-best">4.74</span> <small>±0.0</small></td><td>30.47 <small>±2.0</small></td>
+            </tr>
+            <tr class="ours-row">
+              <td>L-MDS + F-MDS</td>
+              <td>3.58 <small>±0.0</small></td>
+              <td>3.30 <small>±0.0</small></td><td>5.78 <small>±0.1</small></td>
+              <td>2.39 <small>±0.1</small></td><td><strong class="best">6.28</strong> <small>±0.6</small></td>
+              <td>2.97 <small>±0.0</small></td><td>12.18 <small>±0.6</small></td>
+              <td>4.23 <small>±0.1</small></td><td>22.30 <small>±1.3</small></td>
+              <td>4.82 <small>±0.1</small></td><td>32.99 <small>±2.8</small></td>
+            </tr>
+            <tr class="improve-row">
+              <td>Ours (best) vs. ERM</td>
+              <td><span class="improve-pos">+0.14</span></td>
+              <td><span class="improve-pos">+0.14</span></td><td><span class="improve-pos">+0.17</span></td>
+              <td><span class="improve-neg">-0.06</span></td><td><span class="improve-pos">+0.17</span></td>
+              <td><span class="improve-neg">-0.01</span></td><td><span class="improve-pos">+0.58</span></td>
+              <td><span class="improve-pos">+0.32</span></td><td><span class="improve-pos">+3.68</span></td>
+              <td><span class="improve-pos">+0.48</span></td><td><span class="improve-neg">-0.69</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="table-label" style="margin-top:2rem;">PovertyMap &mdash; Poverty Index Regression</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-main" rowspan="3">Algorithm</th>
+              <th class="col-main" rowspan="3">Overall</th>
+              <th class="col-group" colspan="2">Test Error (by attribute)</th>
+              <th class="col-group" colspan="8">Test Error (by shot)</th>
+            </tr>
+            <tr>
+              <th class="col-sub" rowspan="2">Average</th>
+              <th class="col-sub" rowspan="2">Worst</th>
+              <th class="col-group" colspan="2">Many</th>
+              <th class="col-group" colspan="2">Medium</th>
+              <th class="col-group" colspan="2">Few</th>
+              <th class="col-group" colspan="2">Zero</th>
+            </tr>
+            <tr>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ERM</td>
+              <td>0.504 <small>±0.0</small></td>
+              <td>0.502 <small>±0.0</small></td><td>0.679 <small>±0.0</small></td>
+              <td><strong class="best">0.256</strong> <small>±0.0</small></td><td><strong class="best">0.504</strong> <small>±0.1</small></td>
+              <td>0.335 <small>±0.0</small></td><td>1.356 <small>±0.1</small></td>
+              <td>0.494 <small>±0.0</small></td><td>2.452 <small>±0.1</small></td>
+              <td>0.744 <small>±0.0</small></td><td><span class="second-best">1.996</span> <small>±0.1</small></td>
+            </tr>
+            <tr>
+              <td>Resample</td>
+              <td>0.506 <small>±0.0</small></td>
+              <td>0.503 <small>±0.0</small></td><td>0.710 <small>±0.0</small></td>
+              <td>0.385 <small>±0.0</small></td><td>0.781 <small>±0.2</small></td>
+              <td>0.391 <small>±0.0</small></td><td>1.383 <small>±0.1</small></td>
+              <td><strong class="best">0.463</strong> <small>±0.0</small></td><td>2.247 <small>±0.1</small></td>
+              <td>0.737 <small>±0.0</small></td><td>2.019 <small>±0.1</small></td>
+            </tr>
+            <tr>
+              <td>SqrtReWeight</td>
+              <td>0.512 <small>±0.0</small></td>
+              <td>0.509 <small>±0.0</small></td><td>0.670 <small>±0.0</small></td>
+              <td>0.375 <small>±0.0</small></td><td>0.679 <small>±0.2</small></td>
+              <td>0.376 <small>±0.0</small></td><td>1.441 <small>±0.1</small></td>
+              <td>0.478 <small>±0.0</small></td><td>2.233 <small>±0.1</small></td>
+              <td>0.753 <small>±0.0</small></td><td>2.037 <small>±0.1</small></td>
+            </tr>
+            <tr>
+              <td>ReWeight</td>
+              <td>0.522 <small>±0.0</small></td>
+              <td>0.520 <small>±0.0</small></td><td>0.750 <small>±0.0</small></td>
+              <td>0.485 <small>±0.1</small></td><td>0.805 <small>±0.1</small></td>
+              <td>0.431 <small>±0.0</small></td><td>1.426 <small>±0.1</small></td>
+              <td><span class="second-best">0.464</span> <small>±0.0</small></td><td><span class="second-best">2.088</span> <small>±0.2</small></td>
+              <td>0.748 <small>±0.0</small></td><td>2.012 <small>±0.1</small></td>
+            </tr>
+            <tr>
+              <td>CBLoss</td>
+              <td>0.515 <small>±0.0</small></td>
+              <td>0.513 <small>±0.0</small></td><td>0.720 <small>±0.0</small></td>
+              <td>0.450 <small>±0.0</small></td><td>0.856 <small>±0.2</small></td>
+              <td>0.420 <small>±0.0</small></td><td>1.447 <small>±0.1</small></td>
+              <td>0.467 <small>±0.0</small></td><td>2.142 <small>±0.1</small></td>
+              <td>0.729 <small>±0.0</small></td><td>2.029 <small>±0.1</small></td>
+            </tr>
+            <tr>
+              <td>DANN</td>
+              <td>0.689 <small>±0.1</small></td>
+              <td>0.685 <small>±0.1</small></td><td>0.869 <small>±0.0</small></td>
+              <td>0.796 <small>±0.1</small></td><td>0.996 <small>±0.1</small></td>
+              <td>0.574 <small>±0.1</small></td><td>1.638 <small>±0.1</small></td>
+              <td>0.598 <small>±0.1</small></td><td><strong class="best">1.926</strong> <small>±0.1</small></td>
+              <td>1.003 <small>±0.1</small></td><td>2.191 <small>±0.1</small></td>
+            </tr>
+            <tr>
+              <td>RnC</td>
+              <td>0.494 <small>±0.0</small></td>
+              <td>0.490 <small>±0.0</small></td><td>0.675 <small>±0.0</small></td>
+              <td>0.304 <small>±0.0</small></td><td>0.559 <small>±0.1</small></td>
+              <td><strong class="best">0.290</strong> <small>±0.0</small></td><td><strong class="best">1.103</strong> <small>±0.1</small></td>
+              <td>0.486 <small>±0.0</small></td><td>2.320 <small>±0.1</small></td>
+              <td>0.773 <small>±0.0</small></td><td>2.153 <small>±0.2</small></td>
+            </tr>
+            <tr>
+              <td>LDS</td>
+              <td>0.501 <small>±0.0</small></td>
+              <td>0.499 <small>±0.0</small></td><td>0.712 <small>±0.0</small></td>
+              <td>0.331 <small>±0.0</small></td><td>0.717 <small>±0.1</small></td>
+              <td>0.336 <small>±0.0</small></td><td>1.458 <small>±0.1</small></td>
+              <td>0.501 <small>±0.0</small></td><td>2.276 <small>±0.1</small></td>
+              <td><strong class="best">0.714</strong> <small>±0.0</small></td><td>2.049 <small>±0.1</small></td>
+            </tr>
+            <tr>
+              <td>GroupDRO</td>
+              <td>0.492 <small>±0.0</small></td>
+              <td>0.489 <small>±0.0</small></td><td><span class="second-best">0.648</span> <small>±0.0</small></td>
+              <td>0.376 <small>±0.1</small></td><td>0.844 <small>±0.2</small></td>
+              <td><span class="second-best">0.319</span> <small>±0.0</small></td><td><span class="second-best">1.245</span> <small>±0.1</small></td>
+              <td>0.470 <small>±0.0</small></td><td>2.382 <small>±0.1</small></td>
+              <td>0.757 <small>±0.0</small></td><td>2.016 <small>±0.1</small></td>
+            </tr>
+            <tr class="ours-row">
+              <td>L-MDS</td>
+              <td><strong class="best">0.486</strong> <small>±0.0</small></td>
+              <td><strong class="best">0.484</strong> <small>±0.0</small></td><td>0.666 <small>±0.0</small></td>
+              <td><span class="second-best">0.271</span> <small>±0.0</small></td><td><span class="second-best">0.535</span> <small>±0.2</small></td>
+              <td>0.336 <small>±0.0</small></td><td>1.417 <small>±0.1</small></td>
+              <td>0.467 <small>±0.0</small></td><td>2.385 <small>±0.1</small></td>
+              <td>0.720 <small>±0.0</small></td><td><strong class="best">1.987</strong> <small>±0.1</small></td>
+            </tr>
+            <tr class="ours-row">
+              <td>F-MDS</td>
+              <td><span class="second-best">0.488</span> <small>±0.0</small></td>
+              <td><span class="second-best">0.485</span> <small>±0.0</small></td><td>0.670 <small>±0.0</small></td>
+              <td>0.278 <small>±0.0</small></td><td>0.554 <small>±0.1</small></td>
+              <td>0.327 <small>±0.0</small></td><td>1.307 <small>±0.1</small></td>
+              <td>0.477 <small>±0.0</small></td><td>2.492 <small>±0.1</small></td>
+              <td>0.719 <small>±0.0</small></td><td>2.057 <small>±0.0</small></td>
+            </tr>
+            <tr class="ours-row">
+              <td>L-MDS + F-MDS</td>
+              <td>0.492 <small>±0.0</small></td>
+              <td>0.490 <small>±0.0</small></td><td><strong class="best">0.642</strong> <small>±0.0</small></td>
+              <td>0.352 <small>±0.1</small></td><td>0.834 <small>±0.1</small></td>
+              <td>0.332 <small>±0.0</small></td><td>1.369 <small>±0.1</small></td>
+              <td>0.483 <small>±0.0</small></td><td>2.283 <small>±0.2</small></td>
+              <td><span class="second-best">0.715</span> <small>±0.0</small></td><td>2.015 <small>±0.1</small></td>
+            </tr>
+            <tr class="improve-row">
+              <td>Ours (best) vs. ERM (%)</td>
+              <td><span class="improve-pos">+3.57%</span></td>
+              <td><span class="improve-pos">+3.59%</span></td><td><span class="improve-pos">+5.45%</span></td>
+              <td><span class="improve-neg">-5.86%</span></td><td><span class="improve-neg">-6.15%</span></td>
+              <td><span class="improve-pos">+2.39%</span></td><td><span class="improve-pos">+3.61%</span></td>
+              <td><span class="improve-pos">+5.47%</span></td><td><span class="improve-pos">+6.89%</span></td>
+              <td><span class="improve-pos">+3.90%</span></td><td><span class="improve-pos">+0.45%</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="table-label" style="margin-top:2rem;">CodeNet &mdash; CPU Runtime Regression</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-main" rowspan="3">Algorithm</th>
+              <th class="col-main" rowspan="3">Overall</th>
+              <th class="col-group" colspan="2">Test Error (by attribute)</th>
+              <th class="col-group" colspan="6">Test Error (by shot)</th>
+            </tr>
+            <tr>
+              <th class="col-sub" rowspan="2">Average</th>
+              <th class="col-sub" rowspan="2">Worst</th>
+              <th class="col-group" colspan="2">Many</th>
+              <th class="col-group" colspan="2">Medium</th>
+              <th class="col-group" colspan="2">Few</th>
+            </tr>
+            <tr>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+              <th class="col-sub">Avg</th><th class="col-sub">Worst</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ERM</td>
+              <td>268.7 <small>±2.8</small></td>
+              <td>269.0 <small>±2.6</small></td><td>350.3 <small>±11.0</small></td>
+              <td>165.4 <small>±2.8</small></td><td><strong class="best">228.7</strong> <small>±8.9</small></td>
+              <td>268.8 <small>±3.6</small></td><td>398.4 <small>±13.1</small></td>
+              <td>529.8 <small>±5.2</small></td><td>711.3 <small>±21.2</small></td>
+            </tr>
+            <tr>
+              <td>ReWeight</td>
+              <td>253.7 <small>±2.8</small></td>
+              <td>253.5 <small>±2.5</small></td><td>306.3 <small>±9.1</small></td>
+              <td>179.4 <small>±3.4</small></td><td>253.6 <small>±13.0</small></td>
+              <td>249.4 <small>±3.6</small></td><td>374.3 <small>±19.0</small></td>
+              <td>463.4 <small>±6.2</small></td><td>616.5 <small>±18.3</small></td>
+            </tr>
+            <tr>
+              <td>SqrtReWeight</td>
+              <td><span class="second-best">248.2</span> <small>±2.5</small></td>
+              <td><span class="second-best">248.3</span> <small>±2.6</small></td><td>299.4 <small>±8.9</small></td>
+              <td>179.2 <small>±3.1</small></td><td>247.2 <small>±11.5</small></td>
+              <td>242.1 <small>±3.5</small></td><td>328.2 <small>±12.4</small></td>
+              <td>444.6 <small>±6.3</small></td><td><span class="second-best">609.0</span> <small>±23.5</small></td>
+            </tr>
+            <tr>
+              <td>CBLoss</td>
+              <td>251.9 <small>±2.6</small></td>
+              <td>251.8 <small>±2.6</small></td><td>301.3 <small>±9.6</small></td>
+              <td><span class="second-best">161.3</span> <small>±2.8</small></td><td>229.2 <small>±11.5</small></td>
+              <td>253.9 <small>±3.5</small></td><td>333.9 <small>±15.2</small></td>
+              <td>472.9 <small>±5.9</small></td><td>624.0 <small>±16.2</small></td>
+            </tr>
+            <tr>
+              <td>DANN</td>
+              <td>276.0 <small>±2.8</small></td>
+              <td>276.4 <small>±2.6</small></td><td>348.8 <small>±11.0</small></td>
+              <td><strong class="best">148.3</strong> <small>±2.6</small></td><td><span class="second-best">228.9</span> <small>±10.7</small></td>
+              <td>292.9 <small>±3.4</small></td><td>427.0 <small>±15.2</small></td>
+              <td>551.4 <small>±4.7</small></td><td>716.9 <small>±16.3</small></td>
+            </tr>
+            <tr>
+              <td>LDS</td>
+              <td>263.1 <small>±2.7</small></td>
+              <td>263.3 <small>±2.8</small></td><td>322.4 <small>±9.5</small></td>
+              <td>178.6 <small>±3.3</small></td><td>275.6 <small>±13.1</small></td>
+              <td>261.4 <small>±3.7</small></td><td>365.5 <small>±12.1</small></td>
+              <td>484.6 <small>±6.4</small></td><td>686.3 <small>±24.4</small></td>
+            </tr>
+            <tr class="ours-row">
+              <td>L-MDS</td>
+              <td><strong class="best">243.4</strong> <small>±2.7</small></td>
+              <td><strong class="best">243.1</strong> <small>±2.7</small></td><td><span class="second-best">299.0</span> <small>±9.3</small></td>
+              <td>163.7 <small>±3.3</small></td><td>257.7 <small>±14.0</small></td>
+              <td>245.0 <small>±3.9</small></td><td><span class="second-best">321.8</span> <small>±11.4</small></td>
+              <td>440.2 <small>±6.5</small></td><td>623.4 <small>±16.1</small></td>
+            </tr>
+            <tr class="ours-row">
+              <td>F-MDS</td>
+              <td>250.5 <small>±2.6</small></td>
+              <td>250.4 <small>±2.5</small></td><td><strong class="best">287.2</strong> <small>±8.7</small></td>
+              <td>196.0 <small>±3.3</small></td><td>279.6 <small>±10.4</small></td>
+              <td><span class="second-best">235.6</span> <small>±3.5</small></td><td><strong class="best">306.0</strong> <small>±11.9</small></td>
+              <td><span class="second-best">429.0</span> <small>±2.6</small></td><td><strong class="best">592.2</strong> <small>±25.7</small></td>
+            </tr>
+            <tr class="ours-row">
+              <td>L-MDS + F-MDS</td>
+              <td>249.4 <small>±2.5</small></td>
+              <td>249.2 <small>±2.6</small></td><td>299.5 <small>±10.4</small></td>
+              <td>205.4 <small>±3.4</small></td><td>309.0 <small>±12.7</small></td>
+              <td><strong class="best">231.2</strong> <small>±3.3</small></td><td><strong class="best">306.0</strong> <small>±12.0</small></td>
+              <td><strong class="best">413.5</strong> <small>±6.1</small></td><td>622.6 <small>±18.2</small></td>
+            </tr>
+            <tr class="improve-row">
+              <td>Ours (best) vs. ERM</td>
+              <td><span class="improve-pos">+25.3</span></td>
+              <td><span class="improve-pos">+25.9</span></td><td><span class="improve-pos">+63.1</span></td>
+              <td><span class="improve-pos">+1.7</span></td><td><span class="improve-neg">-29.0</span></td>
+              <td><span class="improve-pos">+37.6</span></td><td><span class="improve-pos">+92.4</span></td>
+              <td><span class="improve-pos">+116.3</span></td><td><span class="improve-pos">+119.1</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<!-- ===== Tab: Citation ===== -->
+<div id="tab-citation" class="tab-panel">
+
+  <section class="content-section first-section">
+    <div class="section-inner">
+
+      <div class="section-header">
+        <h2>Paper</h2>
+      </div>
+      <div class="link-buttons" style="justify-content: flex-start; margin-bottom: 1.75rem;">
+        <a href="#">
+          <span class="icon">&#128196;</span>
+          arXiv
+        </a>
+        <a href="#">
+          <span class="icon">&#128196;</span>
+          PDF
+        </a>
+      </div>
+
+      <div class="section-header">
+        <h2>BibTeX</h2>
+      </div>
+      <pre class="bibtex-block"><code>@article{xu2026shortcut,
+  title   = {Shortcut to Nowhere: Demystifying Deep Spurious Regression},
+  author  = {Xu, Guanrong and Li, Jessica and Wang, Hao and Yang, Yuzhe},
+  journal = {arXiv preprint arXiv:XXXX.XXXXX},
+  year    = {2026}
+}</code></pre>
+
+    </div>
+  </section>
+
+</div>
+
+<!-- ===== Footer ===== -->
+<footer class="site-footer">
+  <div class="footer-icons">
+    <a href="https://github.com/yang-ai-lab/Deep-Spurious-Regression" aria-label="GitHub"><i class="fab fa-github"></i></a>
+  </div>
+  <p>
+    Template adapted from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>.
+  </p>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var panels   = document.querySelectorAll('.tab-panel');
+  var navItems = document.querySelectorAll('.nav-links a[data-tab]');
+  var brand    = document.querySelector('.nav-brand[data-tab]');
+  var toggle   = document.querySelector('.nav-toggle');
+  var navLinks = document.querySelector('.nav-links');
+
+  function switchTab(tabId) {
+    panels.forEach(function (p) { p.classList.remove('active'); });
+    var target = document.getElementById('tab-' + tabId);
+    if (target) target.classList.add('active');
+    navItems.forEach(function (a) {
+      a.classList.remove('active');
+      if (a.getAttribute('data-tab') === tabId) a.classList.add('active');
+    });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    history.replaceState(null, '', '#' + tabId);
+  }
+
+  navItems.forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      switchTab(this.getAttribute('data-tab'));
+      if (navLinks) navLinks.classList.remove('open');
+    });
+  });
+
+  if (brand) {
+    brand.addEventListener('click', function (e) {
+      e.preventDefault();
+      switchTab('home');
+    });
+  }
+
+  if (toggle && navLinks) {
+    toggle.addEventListener('click', function () {
+      navLinks.classList.toggle('open');
+    });
+  }
+
+  var hash = window.location.hash.replace('#', '');
+  var validTabs = ['home', 'method', 'results', 'citation'];
+  if (hash && validTabs.indexOf(hash) !== -1) switchTab(hash);
+});
+</script>
+</body>
+</html>
