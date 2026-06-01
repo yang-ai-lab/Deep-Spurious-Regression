@@ -9,7 +9,7 @@ Real-world regression often exhibits shortcuts: attributes spuriously correlated
 
 We define **Deep Spurious Regression (DSR)** as learning from regression data with attribute-label confounding, addressing continuous spurious correlations, and generalizing to all attribute-label combinations at test time. Motivated by the intrinsic difference between classification and regression shortcuts, we propose to exploit the similarity among spurious attributes in both label and feature spaces — accounting for nearby targets and related groups while calibrating both label and learned feature distributions across attributes. Extensive experiments spanning computer vision, environmental sensing, and LLM regression verify the superior performance of our strategies.
 
-![DSR Transferability](teaser/DSR.gif)
+![DSR Transferability](teaser/DSR_new.gif)
 
 ## 📰 News
 - **[2026-XX-XX]** Paper released on [arXiv](https://arxiv.org/abs/XXXX.XXXXX)!
