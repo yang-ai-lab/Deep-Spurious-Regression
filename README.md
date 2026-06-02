@@ -1,6 +1,6 @@
 # Deep Spurious Regression
 
-[![Paper](https://img.shields.io/badge/paper-arXiv-red?logo=arxiv)](https://arxiv.org/abs/XXXX.XXXXX)
+[![Paper](https://img.shields.io/badge/paper-arXiv-red?logo=arxiv)](https://arxiv.org/abs/2606.01723)
 [![HuggingFace](https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-Deep--Spurious--Regression-FFD21E)](https://huggingface.co/yang-ai-lab/Deep-Spurious-Regression)
 [![Webpage](https://img.shields.io/badge/%F0%9F%8C%90%20website-demo-blue)](https://yang-ai-lab.github.io/Deep-Spurious-Regression/)
 [![License](https://img.shields.io/badge/%F0%9F%93%9C%20license-MIT-green)](LICENSE)
@@ -12,7 +12,7 @@ We define **Deep Spurious Regression (DSR)** as learning from regression data wi
 ![DSR Transferability](teaser/DSR.gif)
 
 ## 📰 News
-- **[2026-XX-XX]** Paper released on [arXiv](https://arxiv.org/abs/XXXX.XXXXX)!
+- **[2026-06-01]** Paper released on [arXiv](https://arxiv.org/abs/2606.01723)!
 - **[2026-05-27]** [Project website](https://yang-ai-lab.github.io/Deep-Spurious-Regression/) is live!
 - **[2026-05-26]** Code released on GitHub, and model released on [HuggingFace](https://huggingface.co/yang-ai-lab/Deep-Spurious-Regression)!
 
@@ -116,7 +116,7 @@ If you use this work in your research, please cite the paper:
 @article{xu2026shortcut,
   title   = {Shortcut to Nowhere: Demystifying Deep Spurious Regression},
   author  = {Xu, Guanrong and Li, Jessica and Wang, Hao and Yang, Yuzhe},
-  journal = {arXiv preprint arXiv:XXXX.XXXXX},
+  journal = {arXiv preprint arXiv:2606.01723},
   year    = {2026}
 }
 ```
